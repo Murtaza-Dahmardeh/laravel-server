@@ -83,23 +83,37 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, $id)
     {
+        $user = User::findOrFail($id);
+
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'sometimes|min:6|confirmed',
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'title' => 'required',
+            'company' => 'required',
+            'phone_number' => 'required',
+            'bio' => 'required',
+            'profile_picture' => '',
+            'password' => 'min:6|confirmed',
         ]);
 
-        $user->name = $request->get('name');
-        $user->email = $request->get('email');
-        if ($request->filled('password')) {
-            $user->password = bcrypt($request->get('password'));
-        }
-        $user->save();
+        $user->update([
+            'first_name' => $request->get('first_name'),
+            'last_name' => $request->get('last_name'),
+            'title' => $request->get('title'),
+            'company' => $request->get('company'),
+            'email' => $request->get('email'),
+            'phone_number' => $request->get('phone_number'),
+            'bio' => $request->get('bio'),
+            'profile_picture' => $request->get('profile_picture'),
+            'password' => bcrypt($request->get('password')),
+        ]);
+        // $user->save();
 
-        return redirect('/users')->with('success', 'User has been updated');
+        return response()->json(['data' => $user, 'message' => 'User has been updated']);
     }
+
 
     /**
      * Remove the specified resource from storage.
