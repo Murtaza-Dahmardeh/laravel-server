@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\File;
 
 class UserController extends Controller
 {
@@ -37,12 +39,9 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone_number' => 'required',
             'bio' => 'required',
-            'profile_picture' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'profile_picture' => '',
             'password' => 'min:6|confirmed',
         ]);
-
-        // $profilePictureName = time().'.'.$request->profile_picture->extension();  
-        // $request->profile_picture->move(public_path('profile_pictures'), $profilePictureName);
 
         $user = new User([
             'first_name' => $request->get('first_name'),
@@ -52,7 +51,7 @@ class UserController extends Controller
             'email' => $request->get('email'),
             'phone_number' => $request->get('phone_number'),
             'bio' => $request->get('bio'),
-            // 'profile_picture' => $profilePictureName,
+            'profile_picture' => $request->get('profile_picture'),
             'password' => bcrypt($request->get('password')),
         ]);
         $user->save();
@@ -106,5 +105,40 @@ class UserController extends Controller
         $user->delete();
 
         return redirect('/users')->with('success', 'User has been deleted');
+    }
+
+    /**
+     * Upload the profile picture.
+     */
+    public function upload(Request $request)
+    {
+        $photo = $request->file('image');
+        $filename = $photo->store('photos');
+    
+        $headers = [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'POST, GET, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, X-Auth-Token, Origin, Authorization',
+        ];
+    
+        return response()->json([
+            'filename' => $filename
+        ], 200, $headers);
+    }
+
+    public function loadPhoto($filename) {
+        $path = storage_path('app/photos/' . $filename);
+    
+        if (!File::exists($path)) {
+            abort(404);
+        }
+    
+        $file = File::get($path);
+        $type = File::mimeType($path);
+    
+        $response = Response::make($file, 200);
+        $response->header("Content-Type", $type);
+    
+        return $response;
     }
 }
